@@ -1,6 +1,5 @@
 lo-mqtt:
   uri: ssl://liveobjects.orange-business.com:8883
-  username: application
   api-key:
   topic: fifo/dev
   recovery-interval: 10000
