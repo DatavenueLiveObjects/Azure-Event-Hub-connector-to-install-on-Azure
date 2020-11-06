@@ -1,6 +1,6 @@
 COMPONENT                               | VERSION       | LICENCE        | URL
 ----------------------------------------------------------------------------------------------------------------------------------------------
-Spring Boot Starter Actuator             | 2.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
+Spring Boot Starter Actuator            | 2.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
 Spring Boot Starter Integration         | 2.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
 Spring Integration MQTT Support         | 5.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
 Spring Boot Starter Web                 | 2.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
