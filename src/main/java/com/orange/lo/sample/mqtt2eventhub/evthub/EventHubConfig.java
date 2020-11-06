@@ -11,10 +11,9 @@ import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
 import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.EventHubException;
-import com.orange.lo.sample.mqtt2eventhub.Counters;
+import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,9 +27,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.*;
 
 @Configuration
-public class EventHubClientProvider {
+public class EventHubConfig {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private int maxAttempts;
-    private Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private EventHubClient ehClient;
     private Counters counters;
 
@@ -38,8 +38,7 @@ public class EventHubClientProvider {
     private ThreadPoolExecutor tpe;
     private long throttlingDelay;
 
-    @Autowired
-    public EventHubClientProvider(EventHubProperties eventHubProperties, Counters counters) throws IOException, EventHubException {
+    public EventHubConfig(EventHubProperties eventHubProperties, Counters counters) throws IOException, EventHubException {
         ConnectionStringBuilder conn = new ConnectionStringBuilder()
                 .setOperationTimeout(Duration.of(eventHubProperties.getConnectionTimeout(), ChronoUnit.MILLIS))
                 .setNamespaceName(eventHubProperties.getNameSpace())
@@ -54,7 +53,7 @@ public class EventHubClientProvider {
         throttlingDelay = eventHubProperties.getThrottlingDelay();
         maxAttempts = eventHubProperties.getMaxSendAttempts();
 
-        log.info("INIT HUB");
+        LOG.info("INIT HUB");
         ehClient = EventHubClient.createSync(conn.toString(), Executors.newScheduledThreadPool(10));
     }
 
@@ -68,7 +67,7 @@ public class EventHubClientProvider {
                 });
             } catch (RejectedExecutionException rejected) {
                 counters.evtRejected().increment();
-                log.error("too many tasks in queue, rejecting: {}", msg.hashCode());
+                LOG.error("too many tasks in queue, rejecting: {}", msg.hashCode());
             }
         };
     }
@@ -77,7 +76,7 @@ public class EventHubClientProvider {
         byte[] payloadBytes = msg.getBytes(Charset.defaultCharset());
         EventData sendEvent = EventData.create(payloadBytes);
         if (attemptCount > 0) {
-            log.info("retrying to send ({}): {}", attemptCount, msg.hashCode());
+            LOG.info("retrying to send ({}): {}", attemptCount, msg.hashCode());
         }
 
         try {
@@ -85,41 +84,41 @@ public class EventHubClientProvider {
             counters.evtSuccess().increment();
         } catch (EventHubException e) {
             counters.evtFailure().increment();
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
             if (attemptCount < maxAttempts) {
                 counters.evtRetried().increment();
                 try {
                     Thread.sleep(throttlingDelay * (1 << attemptCount));
                     send(msg, attemptCount + 1);
                 } catch (InterruptedException interrupted) {
-                    log.error("interrupted while waiting for resend, aborting");
+                    LOG.error("interrupted while waiting for resend, aborting");
                     Thread.currentThread().interrupt();
                     counters.evtAborted().increment();
                 }
             } else {
-                log.error("too many retry attempts, aborting");
+                LOG.error("too many retry attempts, aborting");
                 counters.evtAborted().increment();
             }
 
         } catch (RuntimeException e) {
-            log.error(e.toString());
+            LOG.error(e.toString());
         }
     }
 
     @PreDestroy
     public void onDestroy() {
-        log.info("shutting down executor service");
+        LOG.info("shutting down executor service");
         tpe.shutdown();
         try {
             ehClient.closeSync();
         } catch (EventHubException e) {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
     }
 
     @Scheduled(fixedRate = 30000)
     public void reportExecutorData() {
-        log.info("pool size: {}, active threads: {}, tasks in queue: {}", tpe.getPoolSize(), tpe.getActiveCount(), tpe.getQueue().size());
+        LOG.info("pool size: {}, active threads: {}, tasks in queue: {}", tpe.getPoolSize(), tpe.getActiveCount(), tpe.getQueue().size());
     }
 
 }

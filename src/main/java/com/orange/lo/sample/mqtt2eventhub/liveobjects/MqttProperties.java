@@ -14,10 +14,10 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "lo-mqtt")
 public class MqttProperties {
 
-	private final static String USERNAME = "application";
+	private static final String DEFAULT_USERNAME = "application";
 	
     private String uri;
-    private String username = USERNAME;
+    private String username = DEFAULT_USERNAME;
     private String apiKey;
     private String topic;
     private int recoveryInterval;
