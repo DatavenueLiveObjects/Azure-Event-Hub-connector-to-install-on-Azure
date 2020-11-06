@@ -1,0 +1,9 @@
+COMPONENT                               | VERSION       | LICENCE        | URL
+----------------------------------------------------------------------------------------------------------------------------------------------
+Spring Boot Starter Actuator             | 2.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
+Spring Boot Starter Integration         | 2.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
+Spring Integration MQTT Support         | 5.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
+Spring Boot Starter Web                 | 2.1.4.RELEASE | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
+Project ':json Path'                    | 2.4.0         | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
+Microsoft Azure SDK For Event Hubs      | 2.3.2         | MIT license    | https://opensource.org/licenses/mit-license.php
+Guava: Google Core Libraries For Java   | 29.0-jre      | Apache License | Version 2.0, https://www.apache.org/licenses/LICENSE-2.0
