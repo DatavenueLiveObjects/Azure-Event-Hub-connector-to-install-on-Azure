@@ -38,7 +38,8 @@ public class EventHubConfig {
     private ThreadPoolExecutor tpe;
     private long throttlingDelay;
 
-    public EventHubConfig(EventHubProperties eventHubProperties, Counters counters) throws IOException, EventHubException {
+    public EventHubConfig(EventHubProperties eventHubProperties, Counters counters,
+                          EventHubClientFactory clientFactory) throws IOException, EventHubException {
         ConnectionStringBuilder conn = new ConnectionStringBuilder()
                 .setOperationTimeout(Duration.of(eventHubProperties.getConnectionTimeout(), ChronoUnit.MILLIS))
                 .setNamespaceName(eventHubProperties.getNameSpace())
@@ -54,7 +55,8 @@ public class EventHubConfig {
         maxAttempts = eventHubProperties.getMaxSendAttempts();
 
         LOG.info("INIT HUB");
-        ehClient = EventHubClient.createSync(conn.toString(), Executors.newScheduledThreadPool(10));
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(10);
+        ehClient = clientFactory.createEventHubClient(conn, scheduledExecutorService);
     }
 
     @Bean
