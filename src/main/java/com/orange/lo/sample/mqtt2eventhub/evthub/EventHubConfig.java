@@ -34,7 +34,6 @@ public class EventHubConfig {
     private EventHubClient ehClient;
     private Counters counters;
 
-    private BlockingQueue<Runnable> tasks;
     private ThreadPoolExecutor tpe;
     private long throttlingDelay;
 
@@ -49,7 +48,7 @@ public class EventHubConfig {
 
         this.counters = counters;
 
-        tasks = new ArrayBlockingQueue<>(eventHubProperties.getTaskQueueSize());
+        BlockingQueue<Runnable> tasks = new ArrayBlockingQueue<>(eventHubProperties.getTaskQueueSize());
         tpe = new ThreadPoolExecutor(eventHubProperties.getThreadPoolSize(), eventHubProperties.getThreadPoolSize(), 10, TimeUnit.SECONDS, tasks);
         throttlingDelay = eventHubProperties.getThrottlingDelay();
         maxAttempts = eventHubProperties.getMaxSendAttempts();
