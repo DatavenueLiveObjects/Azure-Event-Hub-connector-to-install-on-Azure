@@ -10,7 +10,6 @@ package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.config.EnableIntegration;
@@ -29,19 +28,18 @@ import java.lang.invoke.MethodHandles;
 @Configuration
 public class MqttConfig {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private MqttProperties lomProperties;
     private MqttHandler mqttHandler;
 
-    private Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    @Autowired
     public MqttConfig(MqttProperties lomProperties, MqttHandler mqttHandler) {
         this.lomProperties = lomProperties;
         this.mqttHandler = mqttHandler;
     }
 
     private MqttPahoClientFactory mqttClientFactory() {
-        log.info("Connecting to mqtt server: {}", lomProperties.getUri());
+        LOG.info("Connecting to mqtt server: {}", lomProperties.getUri());
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions opts = new MqttConnectOptions();
             opts.setServerURIs(new String[]{lomProperties.getUri()});
@@ -55,7 +53,7 @@ public class MqttConfig {
 
     @Bean
     public MessageProducerSupport mqttInbound() {
-        log.info("Connecting to mqtt topics: {}", lomProperties.getTopic());
+        LOG.info("Connecting to mqtt topics: {}", lomProperties.getTopic());
         MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter("mqtt2evthub",
                 mqttClientFactory(),
                 lomProperties.getTopic()

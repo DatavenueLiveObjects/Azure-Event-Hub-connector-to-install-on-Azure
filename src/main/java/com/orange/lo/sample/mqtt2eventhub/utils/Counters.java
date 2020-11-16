@@ -5,11 +5,10 @@
 * LICENSE file in the root directory of this source tree. 
 */
 
-package com.orange.lo.sample.mqtt2eventhub;
+package com.orange.lo.sample.mqtt2eventhub.utils;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,7 +21,6 @@ public class Counters {
     private Counter evtRetried;
     private Counter evtRejected;
 
-    @Autowired
     public Counters(MeterRegistry registry) {
         mqttRead = registry.counter("mqtt-received");
         evtAttempt = registry.counter("evt-attempt");
