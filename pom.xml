@@ -143,7 +143,7 @@
                     <!-- Web App information -->
                     <resourceGroup>JavaApps</resourceGroup>
                     <appServicePlanName>PremiumPlan</appServicePlanName>
-                    <appName>lo-event-hub-test</appName>
+                    <appName>lo-event-hub</appName>
 
                     <!-- Java Runtime Stack for Web App on Linux-->
                     <linuxRuntime>jre8</linuxRuntime>
