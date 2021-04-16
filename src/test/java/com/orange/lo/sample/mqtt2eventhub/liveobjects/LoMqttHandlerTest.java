@@ -16,7 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class MqttHandlerTest {
+class LoMqttHandlerTest {
 
     @Mock
     private EvtHubSender evtHubSender;
@@ -24,19 +24,19 @@ class MqttHandlerTest {
     private Counters counters;
     @Mock
     private Counter counter;
-    private MqttHandler mqttHandler;
+    private LoMqttHandler loMqttHandler;
 
     @BeforeEach
     void setUp() {
         when(counters.mqttEvents()).thenReturn(counter);
-        mqttHandler = new MqttHandler(evtHubSender, counters);
+        loMqttHandler = new LoMqttHandler(evtHubSender, counters);
     }
 
     @Test
     void shouldCallEvtHubSenderAndCounterWhenMessageIsHandled() {
         Message<String> message = new GenericMessage<>("{}");
 
-        mqttHandler.handleMessage(message);
+        loMqttHandler.onMessage(message.getPayload());
 
         verify(counter, times(1)).increment();
         verify(evtHubSender, times(1)).send(message.getPayload());

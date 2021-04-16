@@ -7,25 +7,25 @@
 
 package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
-import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import com.orange.lo.sample.mqtt2eventhub.evthub.EvtHubSender;
+import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
+import com.orange.lo.sdk.fifomqtt.DataManagementFifoCallback;
 import io.micrometer.core.instrument.Counter;
-import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MqttHandler {
+public class LoMqttHandler implements DataManagementFifoCallback {
     private EvtHubSender evtHubSender;
     private Counter mqttEvtCounter;
 
-    public MqttHandler(EvtHubSender evtHubSender, Counters counterProvider) {
+    public LoMqttHandler(EvtHubSender evtHubSender, Counters counterProvider) {
         this.evtHubSender = evtHubSender;
         mqttEvtCounter = counterProvider.mqttEvents();
     }
 
-    public void handleMessage(Message<String> msg) {
+    @Override
+    public void onMessage(String message) {
         mqttEvtCounter.increment();
-        evtHubSender.send(msg.getPayload());
+        evtHubSender.send(message);
     }
-
 }
