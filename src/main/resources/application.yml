@@ -17,7 +17,7 @@ azure:
     thread-pool-size: 40
     task-queue-size: 150000
     connection-timeout: 5000
-    throttling-delay: 5000
+    throttling-delay: 5ms
     max-send-attempts: 3
 
 management:

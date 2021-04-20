@@ -3,6 +3,8 @@ package com.orange.lo.sample.mqtt2eventhub.evthub;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EventHubPropertiesTest {
@@ -72,7 +74,7 @@ class EventHubPropertiesTest {
 
     @Test
     void shouldSetThrottlingDelay() {
-        int throttlingDelay = 500;
+        Duration throttlingDelay = Duration.ofMillis(500);
         eventHubProperties.setThrottlingDelay(throttlingDelay);
 
         assertEquals(throttlingDelay, eventHubProperties.getThrottlingDelay());

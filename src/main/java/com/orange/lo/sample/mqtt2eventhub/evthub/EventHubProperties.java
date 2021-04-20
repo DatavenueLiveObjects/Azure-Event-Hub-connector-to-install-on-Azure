@@ -8,7 +8,11 @@
 package com.orange.lo.sample.mqtt2eventhub.evthub;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.convert.DurationUnit;
 import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 @Component
 @ConfigurationProperties(prefix = "azure.evt-hub")
@@ -20,8 +24,9 @@ public class EventHubProperties {
     private int threadPoolSize;
     private long connectionTimeout;
     private int taskQueueSize;
-    private long throttlingDelay;
-    private int maxSendAttempts;
+    @DurationUnit(ChronoUnit.MILLIS)
+    private Duration throttlingDelay = Duration.ofMillis(1);
+    private int maxSendAttempts = 3;
 
     public String getNameSpace() {
         return nameSpace;
@@ -79,11 +84,11 @@ public class EventHubProperties {
         this.taskQueueSize = taskQueueSize;
     }
 
-    public long getThrottlingDelay() {
+    public Duration getThrottlingDelay() {
         return throttlingDelay;
     }
 
-    public void setThrottlingDelay(long throttlingDelay) {
+    public void setThrottlingDelay(Duration throttlingDelay) {
         this.throttlingDelay = throttlingDelay;
     }
 

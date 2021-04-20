@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
@@ -29,6 +30,8 @@ class EventHubConfigTest {
         EventHubProperties eventHubProperties = new EventHubProperties();
         eventHubProperties.setThreadPoolSize(20);
         eventHubProperties.setTaskQueueSize(20);
+        eventHubProperties.setMaxSendAttempts(1);
+        eventHubProperties.setThrottlingDelay(Duration.ofMillis(1));
         eventHubConfig = new EventHubConfig(eventHubProperties, counters, (conn, executor) -> eventHubClient);
     }
 
