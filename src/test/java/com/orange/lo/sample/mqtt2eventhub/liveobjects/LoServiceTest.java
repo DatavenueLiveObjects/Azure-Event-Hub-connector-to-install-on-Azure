@@ -2,14 +2,12 @@ package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
 import com.orange.lo.sdk.LOApiClient;
 import com.orange.lo.sdk.fifomqtt.DataManagementFifo;
-import com.orange.lo.sdk.fifomqtt.DataManagementFifoCallback;
 import com.orange.lo.sdk.mqtt.exceptions.LoMqttException;
 import net.jodah.failsafe.RetryPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;

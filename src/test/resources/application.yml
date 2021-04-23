@@ -3,11 +3,9 @@ lo:
   api-key: test
   topic: dev
   keep-alive-interval-seconds: 30
-  synchronization-interval: 60000
   automatic-reconnect: true
   message-qos: 1
   mqtt-persistence-dir: ${basedir:.}/temp/
-  message-batch-size: 10
   connection-timeout: 30000
 
 azure:

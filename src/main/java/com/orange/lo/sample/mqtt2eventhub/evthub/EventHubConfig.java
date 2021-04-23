@@ -26,7 +26,10 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 public class EventHubConfig {
@@ -39,7 +42,8 @@ public class EventHubConfig {
     private RetryPolicy<Void> retryPolicy;
 
     public EventHubConfig(EventHubProperties eventHubProperties, Counters counters,
-                          EventHubClientFactory clientFactory) throws IOException, EventHubException {
+                          EventHubClientFactory clientFactory, ThreadPoolExecutor threadPoolExecutor) throws IOException, EventHubException {
+        tpe = threadPoolExecutor;
         ConnectionStringBuilder conn = new ConnectionStringBuilder()
                 .setOperationTimeout(Duration.of(eventHubProperties.getConnectionTimeout(), ChronoUnit.MILLIS))
                 .setNamespaceName(eventHubProperties.getNameSpace())
@@ -49,8 +53,6 @@ public class EventHubConfig {
 
         this.counters = counters;
 
-        BlockingQueue<Runnable> tasks = new ArrayBlockingQueue<>(eventHubProperties.getTaskQueueSize());
-        tpe = new ThreadPoolExecutor(eventHubProperties.getThreadPoolSize(), eventHubProperties.getThreadPoolSize(), 10, TimeUnit.SECONDS, tasks);
         Duration throttlingDelay = eventHubProperties.getThrottlingDelay();
         int maxAttempts = eventHubProperties.getMaxSendAttempts();
 
@@ -58,6 +60,7 @@ public class EventHubConfig {
                 .withMaxAttempts(maxAttempts)
                 .withBackoff(throttlingDelay.getNano(), throttlingDelay.multipliedBy(1 << maxAttempts).getNano(), ChronoUnit.NANOS)
                 .withMaxDuration(Duration.ofHours(1))
+                .handle(EventHubException.class)
                 .onRetry(attempt -> counters.evtRetried().increment())
                 .onRetriesExceeded(e -> {
                     LOG.error("too many retry attempts, aborting");
@@ -85,8 +88,7 @@ public class EventHubConfig {
         return msg -> {
             try {
                 tpe.submit(() -> {
-                    counters.evtAttemptCount().increment();
-                    send(msg, 0);
+                    send(msg);
                 });
             } catch (RejectedExecutionException rejected) {
                 counters.evtRejected().increment();
@@ -95,7 +97,9 @@ public class EventHubConfig {
         };
     }
 
-    private void send(String msg, int attemptCount) {
+    private void send(String msg) {
+        counters.evtAttemptCount().increment();
+
         byte[] payloadBytes = msg.getBytes(Charset.defaultCharset());
         EventData sendEvent = EventData.create(payloadBytes);
 
