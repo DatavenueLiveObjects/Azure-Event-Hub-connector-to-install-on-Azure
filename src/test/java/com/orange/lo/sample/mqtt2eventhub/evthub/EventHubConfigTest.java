@@ -59,7 +59,7 @@ class EventHubConfigTest {
     }
 
     @Test
-    void shouldRetryOnEventHubException() throws EventHubException, InterruptedException {
+    void shouldRetryOnEventHubException() throws EventHubException {
         doThrow(new EventHubException(false, "dummy"))
                 .doNothing()
                 .when(eventHubClient)
@@ -78,7 +78,7 @@ class EventHubConfigTest {
     }
 
     @Test
-    void shouldAbortOnRuntimeException() throws EventHubException, InterruptedException {
+    void shouldAbortOnRuntimeException() throws EventHubException {
         doThrow(new RuntimeException())
                 .doNothing()
                 .when(eventHubClient)
