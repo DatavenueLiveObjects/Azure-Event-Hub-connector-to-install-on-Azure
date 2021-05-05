@@ -54,22 +54,22 @@ To create a Plan, enter [Azure Web Portal]( https://portal.azure.com/) and selec
 
 Application is using standard Spring mechanisms for configuration, with all properties stored within `application.yml` file. Properties values can be kept there and/or overridden from other sources (e.g. from environment variables) – see more information in  [Spring documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html). One of possible methods for setting Spring app configuration parameters from Azure is to define `JAVA_OPTS` environment variable and place configuration values in it. For example, in order to specify `lo-mqtt.api-key` and `lo-mqtt.topic`, one would need to set `JAVA_OPTS` to:
 ```
--Dlo-mqtt.api-key=apikey –Dlo-mqtt.topic=fifo/topic
+-Dlo.api-key=apikey –Dlo.topic=fifo/topic
 ```
 More information on `JAVA_OPTS` in Azure context can be found [here]( https://blogs.msdn.microsoft.com/azureossds/2015/10/09/setting-environment-variable-and-accessing-it-in-java-program-on-azure-webapp/).
 
 The following properties are used for integration:
 
-##### lo-mqtt.uri
+##### lo.hostname
 URI of the Live Objects platform.
-Default value `ssl://liveobjects.orange-business.com:8883`
-##### lo-mqtt.api-key
+Default value `liveobjects.orange-business.com`
+##### lo.api-key
 API key to authorize the MQTT connector. Information on how to create a Live Objects API key can be found in [Live Objects documentation](https://liveobjects.orange-business.com/doc/html/lo_manual.html#API_KEY). 
 There is no sensible default value since it should correspond to your account on Live Objects.
 Connector uses [Application mode]( https://liveobjects.orange-business.com/doc/html/lo_manual.html#MQTT_MODE_APPLICATION) to connect to Live Objects Platform so `username` is internally set to `application` and it cannot be changed.
  
-##### lo-mqtt.topic
-Name of the MQTT queue. For example, if Live Objects web portal displays a FIFO named “dev” (seen under “Data -> FIFO” option), to subscribe to this queue the property should be set to `fifo/dev`.
+##### lo.topic
+Name of the MQTT queue. For example, if Live Objects web portal displays a FIFO named “dev” (seen under “Data -> FIFO” option), to subscribe to this queue the property should be set to `dev`.
 ##### azure.evt-hub.name-space
 Namespace in which your Event Hub is created.
 ##### azure.evt-hub.evt-hub-name
@@ -92,7 +92,7 @@ The following lines are relevant:
 ```
 <resourceGroup>JavaApps</resourceGroup>
 <appServicePlanName>PremiumV2Plan</appServicePlanName>
-<appName>mqlive</appName>
+<appName>lo-event-hub</appName>
 ```
 
 The `resourceGroup` and `appServicePlanName` should correspond to values provided during App Service Plan creation. `appName` will be used to uniquely identify the deployed connector app. Please keep in mind that `appName` must be unique application name in whole `azurewebsites.net` subdomain to avoid dns collision.

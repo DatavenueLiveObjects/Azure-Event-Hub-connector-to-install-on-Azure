@@ -1,9 +1,9 @@
-/** 
-* Copyright (c) Orange. All Rights Reserved.
-* 
-* This source code is licensed under the MIT license found in the 
-* LICENSE file in the root directory of this source tree. 
-*/
+/**
+ * Copyright (c) Orange. All Rights Reserved.
+ * <p>
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 package com.orange.lo.sample.mqtt2eventhub.evthub;
 
@@ -12,6 +12,8 @@ import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.EventHubException;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -24,21 +26,24 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 public class EventHubConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private int maxAttempts;
     private EventHubClient ehClient;
     private Counters counters;
 
     private ThreadPoolExecutor tpe;
-    private long throttlingDelay;
+    private RetryPolicy<Void> retryPolicy;
 
     public EventHubConfig(EventHubProperties eventHubProperties, Counters counters,
-                          EventHubClientFactory clientFactory) throws IOException, EventHubException {
+                          EventHubClientFactory clientFactory, ThreadPoolExecutor threadPoolExecutor) throws IOException, EventHubException {
+        tpe = threadPoolExecutor;
         ConnectionStringBuilder conn = new ConnectionStringBuilder()
                 .setOperationTimeout(Duration.of(eventHubProperties.getConnectionTimeout(), ChronoUnit.MILLIS))
                 .setNamespaceName(eventHubProperties.getNameSpace())
@@ -48,10 +53,30 @@ public class EventHubConfig {
 
         this.counters = counters;
 
-        BlockingQueue<Runnable> tasks = new ArrayBlockingQueue<>(eventHubProperties.getTaskQueueSize());
-        tpe = new ThreadPoolExecutor(eventHubProperties.getThreadPoolSize(), eventHubProperties.getThreadPoolSize(), 10, TimeUnit.SECONDS, tasks);
-        throttlingDelay = eventHubProperties.getThrottlingDelay();
-        maxAttempts = eventHubProperties.getMaxSendAttempts();
+        Duration throttlingDelay = eventHubProperties.getThrottlingDelay();
+        int maxAttempts = eventHubProperties.getMaxSendAttempts();
+
+        retryPolicy = new RetryPolicy<Void>()
+                .withMaxAttempts(maxAttempts)
+                .withBackoff(throttlingDelay.getNano(), throttlingDelay.multipliedBy(1 << maxAttempts).getNano(), ChronoUnit.NANOS)
+                .withMaxDuration(Duration.ofHours(1))
+                .handle(EventHubException.class)
+                .onRetry(attempt -> counters.evtRetried().increment())
+                .onRetriesExceeded(e -> {
+                    LOG.error("too many retry attempts, aborting");
+                    counters.evtAborted().increment();
+                })
+                .onFailedAttempt(attempt -> {
+                    counters.evtFailure().increment();
+                    LOG.error(attempt.getLastFailure().getMessage());
+                })
+                .abortOn(InterruptedException.class)
+                .onAbort(msg -> {
+                    LOG.error("interrupted while waiting for resend, aborting");
+                    Thread.currentThread().interrupt();
+                    counters.evtAborted().increment();
+                });
+
 
         LOG.info("INIT HUB");
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(10);
@@ -63,8 +88,7 @@ public class EventHubConfig {
         return msg -> {
             try {
                 tpe.submit(() -> {
-                    counters.evtAttemptCount().increment();
-                    send(msg, 0);
+                    send(msg);
                 });
             } catch (RejectedExecutionException rejected) {
                 counters.evtRejected().increment();
@@ -73,34 +97,24 @@ public class EventHubConfig {
         };
     }
 
-    private void send(String msg, int attemptCount) {
+    private void send(String msg) {
+        counters.evtAttemptCount().increment();
+
         byte[] payloadBytes = msg.getBytes(Charset.defaultCharset());
         EventData sendEvent = EventData.create(payloadBytes);
-        if (attemptCount > 0) {
-            LOG.info("retrying to send ({}): {}", attemptCount, msg.hashCode());
-        }
+
+        RetryPolicy<Void> sendRetryPolicy = retryPolicy
+                .copy()
+                .onRetry(attempt ->
+                LOG.info("retrying to send ({}): {}", attempt.getAttemptCount(), msg.hashCode())
+        );
 
         try {
-            ehClient.sendSync(sendEvent);
-            counters.evtSuccess().increment();
-        } catch (EventHubException e) {
-            counters.evtFailure().increment();
-            LOG.error(e.getMessage());
-            if (attemptCount < maxAttempts) {
-                counters.evtRetried().increment();
-                try {
-                    Thread.sleep(throttlingDelay * (1 << attemptCount));
-                    send(msg, attemptCount + 1);
-                } catch (InterruptedException interrupted) {
-                    LOG.error("interrupted while waiting for resend, aborting");
-                    Thread.currentThread().interrupt();
-                    counters.evtAborted().increment();
-                }
-            } else {
-                LOG.error("too many retry attempts, aborting");
-                counters.evtAborted().increment();
-            }
-
+            Failsafe.with(sendRetryPolicy)
+                    .run(e -> {
+                        ehClient.sendSync(sendEvent);
+                        counters.evtSuccess().increment();
+                    });
         } catch (RuntimeException e) {
             LOG.error(e.toString());
         }

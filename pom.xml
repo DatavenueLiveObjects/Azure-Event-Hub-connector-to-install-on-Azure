@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.1.4.RELEASE</version>
+		<version>2.4.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.orange.lo.sample</groupId>
@@ -18,7 +18,19 @@
 		<java.version>1.8</java.version>
 	</properties>
 
+	<repositories>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
+		<dependency>
+			<groupId>com.github.DatavenueLiveObjects</groupId>
+			<artifactId>FIFO_SDK_LiveObjects</artifactId>
+			<version>v1.3</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -50,6 +62,11 @@
             <version>29.0-jre</version>
         </dependency>
 		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.30</version>
+		</dependency>
+		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
 			<version>3.1.0</version>
@@ -79,7 +96,31 @@
 			<version>0.14.1</version>
 			<scope>test</scope>
 		</dependency>
-    </dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>1.1.4</version>
+        </dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot</artifactId>
+		</dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+		<dependency>
+			<groupId>net.jodah</groupId>
+			<artifactId>failsafe</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<plugins>
@@ -91,7 +132,7 @@
             <plugin>
                 <groupId>com.microsoft.azure</groupId>
                 <artifactId>azure-webapp-maven-plugin</artifactId>
-                <version>1.4.0</version>
+                <version>1.6.0</version>
 
                 <configuration>
                     <deploymentType>jar</deploymentType>
@@ -107,7 +148,7 @@
                     <!-- Web App information -->
                     <resourceGroup>JavaApps</resourceGroup>
                     <appServicePlanName>PremiumPlan</appServicePlanName>
-                    <appName>mqlive</appName>
+                    <appName>lo-event-hub</appName>
 
                     <!-- Java Runtime Stack for Web App on Linux-->
                     <linuxRuntime>jre8</linuxRuntime>
@@ -116,5 +157,75 @@
             </plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<configuration>
+							<finalName>${project.artifactId}-${project.version}</finalName>
+							<excludes>
+								<exclude>application.yml</exclude>
+							</excludes>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>appassembler-maven-plugin</artifactId>
+						<version>1.10</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>assemble</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<configurationDirectory>conf</configurationDirectory>
+							<includeConfigurationDirectoryInClasspath>true</includeConfigurationDirectoryInClasspath>
+							<assembleDirectory>${project.build.directory}/azure-hub-lo-assemble</assembleDirectory>
+							<repositoryName>lib</repositoryName>
+							<repositoryLayout>flat</repositoryLayout>
+							<binFileExtensions>
+								<unix>.sh</unix>
+							</binFileExtensions>
+							<platforms>
+								<platform>windows</platform>
+								<platform>unix</platform>
+							</platforms>
+							<programs>
+								<program>
+									<mainClass>com.orange.lo.sample.mqtt2eventhub.Mqtt2EventHubApplication</mainClass>
+									<id>app</id>
+								</program>
+							</programs>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<appendAssemblyId>false</appendAssemblyId>
+									<descriptors>
+										<descriptor>src/main/assembly/assembly.xml</descriptor>
+									</descriptors>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
