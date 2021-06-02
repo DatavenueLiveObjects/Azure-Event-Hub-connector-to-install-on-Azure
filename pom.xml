@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>com.orange.lo.sample</groupId>
 	<artifactId>mqtt2eventhub</artifactId>
-	<version>1.1</version>
+	<version>1.2-SNAPSHOT</version>
 	<name>Mqtt2EventHub</name>
 	<description>Demo project for Spring Boot</description>
 
@@ -172,7 +172,7 @@
 		<url>https://github.com/DatavenueLiveObjects/Azure-Event-Hub-connector-to-install-on-Azure.git</url>
 		<connection>scm:git:${project.scm.url}</connection>
 		<developerConnection>scm:git:${project.scm.url}</developerConnection>
-		<tag>v1.1</tag>
+		<tag>v1.0</tag>
 	</scm>
 
 	<profiles>
