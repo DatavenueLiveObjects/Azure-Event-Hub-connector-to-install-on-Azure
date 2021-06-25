@@ -81,6 +81,8 @@ This is a `Primary key` from the policy above.
 
 #### App deployment
 
+### Through Maven plugin
+
 Now, get this github project on your development machine, using for instance: 
 ```
 git clone https://github.com/DatavenueLiveObjects/Azure-Event-Hub-connector-to-install-on-Azure.git
@@ -96,6 +98,10 @@ The following lines are relevant:
 ```
 
 The `resourceGroup` and `appServicePlanName` should correspond to values provided during App Service Plan creation. `appName` will be used to uniquely identify the deployed connector app. Please keep in mind that `appName` must be unique application name in whole `azurewebsites.net` subdomain to avoid dns collision.
+
+### Manual deployment to a Linux VM
+
+It is also possible to use one of the releases at https://github.com/DatavenueLiveObjects/Azure-Event-Hub-connector-to-install-on-Azure/releases by manually executing the application on a Linux VM.
 
 **Azure login**
 
