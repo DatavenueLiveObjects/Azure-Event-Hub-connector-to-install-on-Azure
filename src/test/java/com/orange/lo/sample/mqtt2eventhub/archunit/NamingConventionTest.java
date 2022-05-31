@@ -43,6 +43,7 @@ class NamingConventionTest {
     void springBootApplicationAnnotatedClassesEndWithApplication2(JavaClasses classes) {
         classes().that().areAssignableTo(Exception.class)
                 .should().haveSimpleNameEndingWith("Exception")
+                .allowEmptyShould(true)
                 .check(classes);
     }
 }

@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.microsoft.azure.eventhubs.EventHubClient.createSync;
+import static com.microsoft.azure.eventhubs.EventHubClient.createFromConnectionStringSync;
 
 @Component
 public class EventHubClientFactoryImpl implements EventHubClientFactory {
@@ -23,6 +23,6 @@ public class EventHubClientFactoryImpl implements EventHubClientFactory {
     @Override
     public EventHubClient createEventHubClient(ConnectionStringBuilder conn, ScheduledExecutorService executor)
             throws IOException, EventHubException {
-        return createSync(conn.toString(), executor);
+        return createFromConnectionStringSync(conn.toString(), executor);
     }
 }
