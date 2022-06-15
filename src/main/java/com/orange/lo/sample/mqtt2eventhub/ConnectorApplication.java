@@ -11,10 +11,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Mqtt2EventHubApplication {
+public class ConnectorApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Mqtt2EventHubApplication.class, args);
+		SpringApplication.run(ConnectorApplication.class, args);
 	}
 
 }
