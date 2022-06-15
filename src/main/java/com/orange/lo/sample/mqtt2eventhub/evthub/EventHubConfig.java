@@ -67,7 +67,7 @@ public class EventHubConfig {
 
         retryPolicy = new RetryPolicy<Void>()
                 .withMaxAttempts(maxAttempts)
-                .withBackoff(throttlingDelay.getNano(), throttlingDelay.multipliedBy(1 << maxAttempts).getNano(), ChronoUnit.NANOS)
+                .withBackoff(throttlingDelay.toNanos(), throttlingDelay.multipliedBy(1 << maxAttempts).toNanos(), ChronoUnit.NANOS)
                 .withMaxDuration(Duration.ofHours(1))
                 .handle(EventHubException.class)
                 .onRetry(attempt -> counters.getMesasageSentAttemptCounter().increment())
@@ -143,53 +143,5 @@ public class EventHubConfig {
     @Scheduled(fixedRate = 30000)
     public void reportExecutorData() {
         LOG.info("pool size: {}, active threads: {}, tasks in queue: {}", tpe.getPoolSize(), tpe.getActiveCount(), tpe.getQueue().size());
-    }
-
-    @Bean
-    public StepRegistryConfig stepRegistryConfig() { 
-    	return new StepRegistryConfig() {
-		
-			@Override
-			public Duration step() {
-				return Duration.ofMinutes(1);
-			}
-			
-			@Override
-			public String prefix() {
-				return "";
-			}
-			
-			@Override
-			public String get(String key) {
-				return null;
-			}
-    	};
-    }
-    
-    @Bean
-    public StepMeterRegistry stepMeterRegistry() {
-	    return new StepMeterRegistry(stepRegistryConfig(), Clock.SYSTEM) {
-			
-			@Override
-			protected TimeUnit getBaseTimeUnit() {
-				return TimeUnit.MILLISECONDS;
-			}
-			
-			@Override
-			protected void publish() {
-				getMeters().stream()
-				    .filter(m -> m.getId().getName().startsWith("message") )
-					.map(m -> get(m.getId().getName()).counter())
-					.forEach(c -> LOG.info(c.getId().getName() + " = " + val(c)));
-			}
-			@Override
-			public void start(ThreadFactory threadFactory) {
-				super.start(Executors.defaultThreadFactory());
-			}
-		};
-    }
-    
-    private long val(Counter cnt) {
-        return Math.round(cnt.count());
     }
 }
