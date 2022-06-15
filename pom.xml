@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>com.orange.lo.sample</groupId>
 	<artifactId>mqtt2eventhub</artifactId>
-	<version>1.4-SNAPSHOT</version>
+	<version>1.5-SNAPSHOT</version>
 	<name>Mqtt2EventHub</name>
 	<description>Demo project for Spring Boot</description>
 
@@ -223,7 +223,7 @@
 							</platforms>
 							<programs>
 								<program>
-									<mainClass>com.orange.lo.sample.mqtt2eventhub.Mqtt2EventHubApplication</mainClass>
+									<mainClass>com.orange.lo.sample.mqtt2eventhub.ConnectorApplication</mainClass>
 									<id>app</id>
 								</program>
 							</programs>
