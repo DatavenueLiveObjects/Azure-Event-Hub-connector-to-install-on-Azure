@@ -33,7 +33,7 @@ class LoMqttHandlerTest {
 
     @BeforeEach
     void setUp() {
-        when(counters.mqttEvents()).thenReturn(counter);
+        when(counters.getMesasageReadCounter()).thenReturn(counter);
         loMqttHandler = new LoMqttHandler(evtHubSender, counters);
     }
 

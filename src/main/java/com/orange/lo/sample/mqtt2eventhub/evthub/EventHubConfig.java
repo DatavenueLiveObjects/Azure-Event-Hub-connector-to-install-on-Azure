@@ -7,20 +7,6 @@
 
 package com.orange.lo.sample.mqtt2eventhub.evthub;
 
-import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
-import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.eventhubs.EventHubClient;
-import com.microsoft.azure.eventhubs.EventHubException;
-import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.Scheduled;
-
-import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
@@ -29,7 +15,30 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PreDestroy;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Scheduled;
+
+import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
+import com.microsoft.azure.eventhubs.EventData;
+import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.EventHubException;
+import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
+
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.step.StepMeterRegistry;
+import io.micrometer.core.instrument.step.StepRegistryConfig;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 
 @Configuration
 public class EventHubConfig {
@@ -61,20 +70,20 @@ public class EventHubConfig {
                 .withBackoff(throttlingDelay.getNano(), throttlingDelay.multipliedBy(1 << maxAttempts).getNano(), ChronoUnit.NANOS)
                 .withMaxDuration(Duration.ofHours(1))
                 .handle(EventHubException.class)
-                .onRetry(attempt -> counters.evtRetried().increment())
+                .onRetry(attempt -> counters.getMesasageSentAttemptCounter().increment())
                 .onRetriesExceeded(e -> {
                     LOG.error("too many retry attempts, aborting");
-                    counters.evtAborted().increment();
+                    counters.getMesasageSentFailedCounter().increment();
                 })
                 .onFailedAttempt(attempt -> {
-                    counters.evtFailure().increment();
+                    counters.getMesasageSentAttemptFailedCounter().increment();
                     LOG.error(attempt.getLastFailure().getMessage());
                 })
                 .abortOn(InterruptedException.class)
                 .onAbort(msg -> {
                     LOG.error("interrupted while waiting for resend, aborting");
                     Thread.currentThread().interrupt();
-                    counters.evtAborted().increment();
+                    counters.getMesasageSentFailedCounter().increment();
                 });
 
 
@@ -91,14 +100,14 @@ public class EventHubConfig {
                     send(msg);
                 });
             } catch (RejectedExecutionException rejected) {
-                counters.evtRejected().increment();
+                counters.getMesasageSentFailedCounter().increment();
                 LOG.error("too many tasks in queue, rejecting: {}", msg.hashCode());
             }
         };
     }
 
     private void send(String msg) {
-        counters.evtAttemptCount().increment();
+        counters.getMesasageSentAttemptCounter().increment();
 
         byte[] payloadBytes = msg.getBytes(Charset.defaultCharset());
         EventData sendEvent = EventData.create(payloadBytes);
@@ -113,7 +122,7 @@ public class EventHubConfig {
             Failsafe.with(sendRetryPolicy)
                     .run(e -> {
                         ehClient.sendSync(sendEvent);
-                        counters.evtSuccess().increment();
+                        counters.getMesasageSentCounter().increment();
                     });
         } catch (RuntimeException e) {
             LOG.error(e.toString());
@@ -136,4 +145,51 @@ public class EventHubConfig {
         LOG.info("pool size: {}, active threads: {}, tasks in queue: {}", tpe.getPoolSize(), tpe.getActiveCount(), tpe.getQueue().size());
     }
 
+    @Bean
+    public StepRegistryConfig stepRegistryConfig() { 
+    	return new StepRegistryConfig() {
+		
+			@Override
+			public Duration step() {
+				return Duration.ofMinutes(1);
+			}
+			
+			@Override
+			public String prefix() {
+				return "";
+			}
+			
+			@Override
+			public String get(String key) {
+				return null;
+			}
+    	};
+    }
+    
+    @Bean
+    public StepMeterRegistry stepMeterRegistry() {
+	    return new StepMeterRegistry(stepRegistryConfig(), Clock.SYSTEM) {
+			
+			@Override
+			protected TimeUnit getBaseTimeUnit() {
+				return TimeUnit.MILLISECONDS;
+			}
+			
+			@Override
+			protected void publish() {
+				getMeters().stream()
+				    .filter(m -> m.getId().getName().startsWith("message") )
+					.map(m -> get(m.getId().getName()).counter())
+					.forEach(c -> LOG.info(c.getId().getName() + " = " + val(c)));
+			}
+			@Override
+			public void start(ThreadFactory threadFactory) {
+				super.start(Executors.defaultThreadFactory());
+			}
+		};
+    }
+    
+    private long val(Counter cnt) {
+        return Math.round(cnt.count());
+    }
 }

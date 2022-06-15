@@ -16,16 +16,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class LoMqttHandler implements DataManagementFifoCallback {
     private final EvtHubSender evtHubSender;
-    private final Counter mqttEvtCounter;
+    private final Counter mesasageReadCounter;
 
-    public LoMqttHandler(EvtHubSender evtHubSender, Counters counterProvider) {
+    public LoMqttHandler(EvtHubSender evtHubSender, Counters counters) {
         this.evtHubSender = evtHubSender;
-        mqttEvtCounter = counterProvider.mqttEvents();
+        mesasageReadCounter = counters.getMesasageReadCounter();
     }
 
     @Override
     public void onMessage(String message) {
-        mqttEvtCounter.increment();
+    	mesasageReadCounter.increment();
         evtHubSender.send(message);
     }
 }

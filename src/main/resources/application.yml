@@ -24,4 +24,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: info, health, metrics, beans
+        include: info, health, metrics, beans, counters

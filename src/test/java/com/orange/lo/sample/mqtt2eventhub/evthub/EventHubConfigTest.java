@@ -11,6 +11,8 @@ import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.EventHubException;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
+
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,11 +36,13 @@ class EventHubConfigTest {
     @Mock()
     private ThreadPoolExecutor threadPoolExecutor;
 
+    @Mock
+    private Counters counters;
+    
+    @Mock
+    private Counter mesasageSentAttemptCounter;
+    
     private EventHubConfig eventHubConfig;
-
-    private Counters buildTestCounters() {
-        return new Counters(new SimpleMeterRegistry());
-    }
 
     @BeforeEach
     void setUp() throws IOException, EventHubException {
@@ -47,7 +51,10 @@ class EventHubConfigTest {
         eventHubProperties.setTaskQueueSize(20);
         eventHubProperties.setMaxSendAttempts(2);
         eventHubProperties.setThrottlingDelay(Duration.ofMillis(1));
-        Counters counters = buildTestCounters();
+        
+        
+        
+        
         eventHubConfig = new EventHubConfig(eventHubProperties, counters, (conn, executor) -> eventHubClient, threadPoolExecutor);
     }
 
@@ -67,6 +74,7 @@ class EventHubConfigTest {
 
     @Test
     void shouldRetryOnEventHubException() throws EventHubException {
+    	when(counters.getMesasageSentAttemptCounter()).thenReturn(mesasageSentAttemptCounter);
         doThrow(new EventHubException(false, "dummy"))
                 .doNothing()
                 .when(eventHubClient)
@@ -86,6 +94,7 @@ class EventHubConfigTest {
 
     @Test
     void shouldAbortOnRuntimeException() throws EventHubException {
+    	when(counters.getMesasageSentAttemptCounter()).thenReturn(mesasageSentAttemptCounter);
         doThrow(new RuntimeException())
                 .doNothing()
                 .when(eventHubClient)
