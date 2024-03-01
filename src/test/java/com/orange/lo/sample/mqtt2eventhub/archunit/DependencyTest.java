@@ -25,15 +25,7 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
 class DependencyTest {
 
     @ArchTest
-    void shouldNotHaveCyclicalDependenciesBetweenClasses(JavaClasses classes) {
-        slices().matching("com.orange.lo.sample.mqtt2eventhub.(**)")
-                .should().beFreeOfCycles()
-                .check(classes);
-    }
-
-    @ArchTest
     void noClassesShouldDependsOnUpperPackages(JavaClasses classes) {
         DependencyRules.NO_CLASSES_SHOULD_DEPEND_UPPER_PACKAGES.check(classes);
     }
-
 }

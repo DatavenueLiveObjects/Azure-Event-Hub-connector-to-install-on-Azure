@@ -7,8 +7,9 @@
 
 package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
-import com.orange.lo.sample.mqtt2eventhub.evthub.EvtHubSender;
+import com.orange.lo.sample.mqtt2eventhub.evthub.EventHubSender;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
+import com.orange.lo.sdk.LOApiClient;
 import io.micrometer.core.instrument.Counter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,11 @@ import static org.mockito.Mockito.*;
 class LoMqttHandlerTest {
 
     @Mock
-    private EvtHubSender evtHubSender;
+    private EventHubSender eventHubSender;
+    @Mock
+    private LOApiClient loApiClient;
+    @Mock
+    private LoProperties loProperties;
     @Mock
     private Counters counters;
     @Mock
@@ -34,16 +39,17 @@ class LoMqttHandlerTest {
     @BeforeEach
     void setUp() {
         when(counters.getMesasageReadCounter()).thenReturn(counter);
-        loMqttHandler = new LoMqttHandler(evtHubSender, counters);
+        loMqttHandler = new LoMqttHandler(eventHubSender, loApiClient, counters, loProperties);
     }
 
     @Test
     void shouldCallEvtHubSenderAndCounterWhenMessageIsHandled() {
-        Message<String> message = new GenericMessage<>("{}");
+        String message = "{}";
+        int loMessageId = 1;
 
-        loMqttHandler.onMessage(message.getPayload());
+        loMqttHandler.onMessage(loMessageId, message);
 
         verify(counter, times(1)).increment();
-        verify(evtHubSender, times(1)).send(message.getPayload());
+        verify(eventHubSender, times(1)).send(loMessageId, message);
     }
 }

@@ -27,43 +27,28 @@ class LoServiceTest {
 
     @Mock
     private DataManagementFifo dataManagementFifo;
-
     @Mock
     private LOApiClient loApiClient;
-
-    private RetryPolicy<Void> retryPolicy;
 
     @BeforeEach
     void setUp() {
         when(loApiClient.getDataManagementFifo()).thenReturn(dataManagementFifo);
-        retryPolicy = new RetryPolicy<Void>()
-                .handleIf(e -> e instanceof LoMqttException)
-                .withMaxAttempts(-1)
-                .withBackoff(1, 32, ChronoUnit.MILLIS)
-                .withMaxDuration(Duration.ofMillis(1000));
     }
 
     @Test
-    void startShouldRetryOnFailure() {
-        doThrow(new LoMqttException())
-                .doNothing()
-                .when(dataManagementFifo)
-                .connectAndSubscribe();
-        LoService loService = new LoService(loApiClient, retryPolicy);
+    void startShouldConnectAndSubscribe() {
+
+        LoService loService = new LoService(loApiClient);
         loService.start();
 
-        verify(dataManagementFifo, times(2)).connectAndSubscribe();
+        verify(dataManagementFifo, times(1)).connectAndSubscribe();
     }
 
     @Test
-    void stopShouldRetryOnFailure() {
-        doThrow(new LoMqttException())
-                .doNothing()
-                .when(dataManagementFifo)
-                .disconnect();
-        LoService loService = new LoService(loApiClient, retryPolicy);
+    void shouldInvokeDisconnect() {
+        LoService loService = new LoService(loApiClient);
         loService.stop();
 
-        verify(dataManagementFifo, times(2)).disconnect();
+        verify(dataManagementFifo, times(1)).disconnect();
     }
 }

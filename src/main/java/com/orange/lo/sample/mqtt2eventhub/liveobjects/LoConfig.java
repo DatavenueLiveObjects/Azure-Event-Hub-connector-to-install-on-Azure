@@ -7,41 +7,53 @@
 
 package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-import java.util.Collections;
-
+import com.orange.lo.sdk.LOApiClient;
+import com.orange.lo.sdk.LOApiClientParameters;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.orange.lo.sdk.LOApiClientParameters;
-import com.orange.lo.sdk.fifomqtt.DataManagementFifoCallback;
+import java.io.File;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.util.Collections;
 
 @Configuration
 @ConfigurationPropertiesScan
 public class LoConfig {
 
-    @Bean
-    public LOApiClientParameters loApiClientParameters(LoProperties loProperties, DataManagementFifoCallback callback) {
+	private final LoProperties loProperties;
+	private final LoMqttHandler loMqttHandler;
+
+	public LoConfig(LoProperties loProperties, LoMqttHandler loMqttHandler) {
+		this.loProperties = loProperties;
+		this.loMqttHandler = loMqttHandler;
+	}
+
+	@Bean
+	public LOApiClient loApiClient() {
+		return new LOApiClient(loApiClientParameters());
+	}
+
+    private LOApiClientParameters loApiClientParameters() {
         return LOApiClientParameters.builder()
                 .apiKey(loProperties.getApiKey())
                 .connectionTimeout(loProperties.getConnectionTimeout())
                 .automaticReconnect(loProperties.getAutomaticReconnect())
                 .hostname(loProperties.getHostname())
                 .topics(Collections.singletonList(loProperties.getTopic()))
+				.manualAck(true)
                 .messageQos(loProperties.getMessageQos())
                 .keepAliveIntervalSeconds(loProperties.getKeepAliveIntervalSeconds())
                 .mqttPersistenceDataDir(loProperties.getMqttPersistenceDir())
-                .dataManagementMqttCallback(callback)
+                .dataManagementMqttCallback(loMqttHandler)
                 .connectorType(loProperties.getConnectorType())
                 .connectorVersion(getConnectorVersion())
                 .build();
     }
-    
+
     private String getConnectorVersion() {
     	MavenXpp3Reader reader = new MavenXpp3Reader();
         Model model = null;
