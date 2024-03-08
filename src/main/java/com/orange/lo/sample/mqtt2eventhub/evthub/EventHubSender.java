@@ -1,15 +1,15 @@
-/** 
-* Copyright (c) Orange. All Rights Reserved.
-* 
-* This source code is licensed under the MIT license found in the 
-* LICENSE file in the root directory of this source tree. 
-*/
+/**
+ * Copyright (c) Orange. All Rights Reserved.
+ * <p>
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 package com.orange.lo.sample.mqtt2eventhub.evthub;
 
-import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.*;
 import com.orange.lo.sample.mqtt2eventhub.liveobjects.LoProperties;
+import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import com.orange.lo.sdk.LOApiClient;
 import net.jodah.failsafe.Failsafe;
@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.time.Duration;
@@ -35,15 +36,20 @@ public class EventHubSender {
     private final LoProperties loProperties;
     private final ExecutorService executorService;
     private final LOApiClient loApiClient;
+    private final ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
 
-    EventHubSender(EventHubClient eventHubClient, Counters counters, EventHubProperties eventHubProperties, LoProperties loProperties, ExecutorService executorService, LOApiClient loApiClient) {
+    EventHubSender(EventHubClient eventHubClient, Counters counters, EventHubProperties eventHubProperties,
+                   LoProperties loProperties, ExecutorService executorService, LOApiClient loApiClient,
+                   ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint) {
         this.eventHubClient = eventHubClient;
         this.counters = counters;
         this.eventHubProperties = eventHubProperties;
         this.loProperties = loProperties;
         this.executorService = executorService;
         this.loApiClient = loApiClient;
+        this.connectorHealthActuatorEndpoint = connectorHealthActuatorEndpoint;
     }
+
     public void send(int loMessageId, String msg) {
 
         byte[] payloadBytes = msg.getBytes(Charset.defaultCharset());
@@ -53,7 +59,7 @@ public class EventHubSender {
                 new RetryPolicy<Void>()
                         .withMaxAttempts(eventHubProperties.getMaxSendAttempts())
                         .withBackoff(eventHubProperties.getThrottlingDelay().toMillis(), Duration.ofMinutes(1).toMillis(), ChronoUnit.MILLIS)
-                        .onRetry(r->{
+                        .onRetry(r -> {
                             LOG.debug("Problem while sending message to Event Hub because of: {}. Retrying...", r.getLastFailure().getMessage());
                             counters.getMesasageSentAttemptFailedCounter().increment();
                         })
@@ -69,7 +75,27 @@ public class EventHubSender {
                         })
         ).with(executorService).run(execution -> {
             counters.getMesasageSentAttemptCounter().increment();
-            eventHubClient.sendSync(sendEvent);
+            try {
+                connectorHealthActuatorEndpoint.setCloudConnectionStatus(true);
+                eventHubClient.sendSync(sendEvent);
+            } catch (AuthorizationFailedException | IllegalEntityException e) {
+                LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
+                connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
+            }
         });
+    }
+
+
+    @PostConstruct
+    private void checkConnection() {
+        EventData sendEvent = EventData.create(new byte[0]);
+        try {
+            eventHubClient.sendSync(sendEvent);
+        } catch (AuthorizationFailedException | IllegalEntityException e) {
+            LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
+            connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
+        }  catch (EventHubException e) {
+            LOG.error(e.getMessage(), e);
+        }
     }
 }
