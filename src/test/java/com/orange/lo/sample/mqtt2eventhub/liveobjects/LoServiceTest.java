@@ -7,18 +7,14 @@
 
 package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
+import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
 import com.orange.lo.sdk.LOApiClient;
 import com.orange.lo.sdk.fifomqtt.DataManagementFifo;
-import com.orange.lo.sdk.mqtt.exceptions.LoMqttException;
-import net.jodah.failsafe.RetryPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 
 import static org.mockito.Mockito.*;
 
@@ -29,6 +25,8 @@ class LoServiceTest {
     private DataManagementFifo dataManagementFifo;
     @Mock
     private LOApiClient loApiClient;
+    @Mock
+    private ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
 
     @BeforeEach
     void setUp() {
@@ -37,8 +35,10 @@ class LoServiceTest {
 
     @Test
     void startShouldConnectAndSubscribe() {
+        when(connectorHealthActuatorEndpoint.isLoConnectionStatus()).thenReturn(true);
+        when(connectorHealthActuatorEndpoint.isCloudConnectionStatus()).thenReturn(true);
 
-        LoService loService = new LoService(loApiClient);
+        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint);
         loService.start();
 
         verify(dataManagementFifo, times(1)).connectAndSubscribe();
@@ -46,7 +46,7 @@ class LoServiceTest {
 
     @Test
     void shouldInvokeDisconnect() {
-        LoService loService = new LoService(loApiClient);
+        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint);
         loService.stop();
 
         verify(dataManagementFifo, times(1)).disconnect();

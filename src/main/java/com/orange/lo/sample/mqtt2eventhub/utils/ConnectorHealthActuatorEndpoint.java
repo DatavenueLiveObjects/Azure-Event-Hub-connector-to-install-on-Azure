@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 public class ConnectorHealthActuatorEndpoint implements HealthIndicator {
 
     LOApiClient loApiClient;
+    boolean cloudConnectionStatus = true;
+    boolean loConnectionStatus = true;
 
     public ConnectorHealthActuatorEndpoint(LOApiClient loApiClient) {
         this.loApiClient = loApiClient;
@@ -27,6 +29,24 @@ public class ConnectorHealthActuatorEndpoint implements HealthIndicator {
         DataManagementFifo dataManagementFifo = loApiClient.getDataManagementFifo();
 
         builder.withDetail("loMqttConnectionStatus", dataManagementFifo.isConnected());
+        builder.withDetail("cloudConnectionStatus", cloudConnectionStatus);
         return builder.build();
+    }
+
+
+    public void setCloudConnectionStatus(boolean cloudConnectionStatus) {
+        this.cloudConnectionStatus = cloudConnectionStatus;
+    }
+
+    public boolean isCloudConnectionStatus() {
+        return cloudConnectionStatus;
+    }
+
+    public void setLoConnectionStatus(boolean cloudConnectionStatus) {
+        this.loConnectionStatus = cloudConnectionStatus;
+    }
+
+    public boolean isLoConnectionStatus() {
+        return loConnectionStatus;
     }
 }
