@@ -78,7 +78,7 @@ public class EventHubSender {
             try {
                 eventHubClient.sendSync(sendEvent);
                 connectorHealthActuatorEndpoint.setCloudConnectionStatus(true);
-            } catch (AuthorizationFailedException | IllegalEntityException e) {
+            } catch (EventHubException e) {
                 LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
                 connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
                 throw e;
@@ -92,11 +92,9 @@ public class EventHubSender {
         EventData sendEvent = EventData.create(new byte[0]);
         try {
             eventHubClient.sendSync(sendEvent);
-        } catch (AuthorizationFailedException | IllegalEntityException e) {
+        } catch (EventHubException e) {
             LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
             connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
-        } catch (EventHubException e) {
-            LOG.error(e.getMessage(), e);
         }
     }
 }
