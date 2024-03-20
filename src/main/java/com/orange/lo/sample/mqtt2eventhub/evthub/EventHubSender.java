@@ -7,9 +7,6 @@
 
 package com.orange.lo.sample.mqtt2eventhub.evthub;
 
-import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.eventhubs.EventHubClient;
-import com.microsoft.azure.eventhubs.EventHubException;
 import com.orange.lo.sample.mqtt2eventhub.liveobjects.LoProperties;
 import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
@@ -21,9 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ExecutorService;
@@ -55,9 +50,6 @@ public class EventHubSender {
 
     public void send(int loMessageId, String msg) {
 
-        byte[] payloadBytes = msg.getBytes(Charset.defaultCharset());
-        EventData sendEvent = EventData.create(payloadBytes);
-
         Failsafe.with(
                 new RetryPolicy<Void>()
                         .withMaxAttempts(eventHubProperties.getMaxSendAttempts())
@@ -79,9 +71,9 @@ public class EventHubSender {
         ).with(executorService).run(execution -> {
             counters.getMesasageSentAttemptCounter().increment();
             try {
-                eventHubClientFacade.eventHubClient().sendSync(sendEvent);
+                eventHubClientFacade.sendSync(msg);
                 connectorHealthActuatorEndpoint.setCloudConnectionStatus(true);
-            } catch (EventHubException | NullPointerException e) {
+            } catch (EventHubClientFacadeException e) {
                 LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
                 connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
                 throw e;
@@ -89,18 +81,13 @@ public class EventHubSender {
         });
     }
 
-
     @PostConstruct
-    private void checkConnection() throws EventHubException, IOException {
-        EventHubClient eventHubClient = eventHubClientFacade.eventHubClient();
-        if (eventHubClient != null) {
-            EventData sendEvent = EventData.create(new byte[0]);
-            try {
-                eventHubClient.sendSync(sendEvent);
-            } catch (EventHubException e) {
-                LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
-                connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
-            }
+    private void checkConnection() {
+        try {
+            eventHubClientFacade.sendSync(new byte[0]);
+        } catch (EventHubClientFacadeException e) {
+            LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
+            connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
         }
     }
 }
