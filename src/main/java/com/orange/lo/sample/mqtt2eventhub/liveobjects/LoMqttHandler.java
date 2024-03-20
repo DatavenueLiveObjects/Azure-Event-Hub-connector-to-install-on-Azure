@@ -11,7 +11,6 @@ import com.orange.lo.sample.mqtt2eventhub.evthub.EventHubSender;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import com.orange.lo.sdk.LOApiClient;
 import com.orange.lo.sdk.fifomqtt.DataManagementFifoCallback;
-import io.micrometer.core.instrument.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
