@@ -7,7 +7,9 @@
 
 package com.orange.lo.sample.mqtt2eventhub.evthub;
 
-import com.microsoft.azure.eventhubs.*;
+import com.microsoft.azure.eventhubs.EventData;
+import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.EventHubException;
 import com.orange.lo.sample.mqtt2eventhub.liveobjects.LoProperties;
 import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
@@ -19,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.time.Duration;
@@ -30,7 +33,7 @@ public class EventHubSender {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final EventHubClient eventHubClient;
+    private final EventHubClientFacade eventHubClientFacade;
     private final Counters counters;
     private final EventHubProperties eventHubProperties;
     private final LoProperties loProperties;
@@ -38,10 +41,10 @@ public class EventHubSender {
     private final LOApiClient loApiClient;
     private final ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
 
-    EventHubSender(EventHubClient eventHubClient, Counters counters, EventHubProperties eventHubProperties,
+    EventHubSender(EventHubClientFacade eventHubClientFacade, Counters counters, EventHubProperties eventHubProperties,
                    LoProperties loProperties, ExecutorService executorService, LOApiClient loApiClient,
                    ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint) {
-        this.eventHubClient = eventHubClient;
+        this.eventHubClientFacade = eventHubClientFacade;
         this.counters = counters;
         this.eventHubProperties = eventHubProperties;
         this.loProperties = loProperties;
@@ -76,9 +79,9 @@ public class EventHubSender {
         ).with(executorService).run(execution -> {
             counters.getMesasageSentAttemptCounter().increment();
             try {
-                eventHubClient.sendSync(sendEvent);
+                eventHubClientFacade.eventHubClient().sendSync(sendEvent);
                 connectorHealthActuatorEndpoint.setCloudConnectionStatus(true);
-            } catch (EventHubException e) {
+            } catch (EventHubException | NullPointerException e) {
                 LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
                 connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
                 throw e;
@@ -88,13 +91,16 @@ public class EventHubSender {
 
 
     @PostConstruct
-    private void checkConnection() {
-        EventData sendEvent = EventData.create(new byte[0]);
-        try {
-            eventHubClient.sendSync(sendEvent);
-        } catch (EventHubException e) {
-            LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
-            connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
+    private void checkConnection() throws EventHubException, IOException {
+        EventHubClient eventHubClient = eventHubClientFacade.eventHubClient();
+        if (eventHubClient != null) {
+            EventData sendEvent = EventData.create(new byte[0]);
+            try {
+                eventHubClient.sendSync(sendEvent);
+            } catch (EventHubException e) {
+                LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
+                connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
+            }
         }
     }
 }

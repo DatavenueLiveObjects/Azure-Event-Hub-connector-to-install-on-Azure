@@ -7,15 +7,10 @@
 
 package com.orange.lo.sample.mqtt2eventhub.evthub;
 
-import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
-import com.microsoft.azure.eventhubs.EventHubClient;
-import com.microsoft.azure.eventhubs.EventHubException;
+import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,20 +19,16 @@ public class EventHubConfig {
 
     private final EventHubProperties eventHubProperties;
 
-    public EventHubConfig(EventHubProperties eventHubProperties) {
+    private final ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
+
+    public EventHubConfig(EventHubProperties eventHubProperties, ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint) {
         this.eventHubProperties = eventHubProperties;
+        this.connectorHealthActuatorEndpoint = connectorHealthActuatorEndpoint;
     }
 
     @Bean
-    public EventHubClient eventHubClient() throws EventHubException, IOException {
-        ConnectionStringBuilder conn = new ConnectionStringBuilder()
-                .setOperationTimeout(Duration.of(eventHubProperties.getConnectionTimeout(), ChronoUnit.MILLIS))
-                .setNamespaceName(eventHubProperties.getNameSpace())
-                .setEventHubName(eventHubProperties.getEvtHubName())
-                .setSasKeyName(eventHubProperties.getSasKeyName())
-                .setSasKey(eventHubProperties.getSasKey());
-
-        return EventHubClient.createFromConnectionStringSync(conn.toString(), Executors.newScheduledThreadPool(eventHubProperties.getThreadPoolSize()));
+    public EventHubClientFacade eventHubClientFacade() {
+        return new EventHubClientFacade(eventHubProperties, connectorHealthActuatorEndpoint);
     }
 
     @Bean
