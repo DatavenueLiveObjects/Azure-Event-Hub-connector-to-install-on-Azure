@@ -20,6 +20,11 @@ azure:
     throttling-delay: 5ms
     max-send-attempts: 3
 
+metrics:
+  namespace: CCS
+  dimension-name: connector-id
+  dimension-value:
+
 management:
   endpoints:
     web:
