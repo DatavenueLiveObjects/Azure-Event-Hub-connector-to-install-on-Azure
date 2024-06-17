@@ -45,7 +45,8 @@ public class ConnectorApplication {
 				.build();
 
 		CloudWatchMeterRegistry cloudWatchMeterRegistry = new CloudWatchMeterRegistry(cloudWatchConfig(), Clock.SYSTEM, cloudWatchAsyncClient);
-		cloudWatchMeterRegistry.config()
+
+    cloudWatchMeterRegistry.config()
 				.meterFilter(MeterFilter.deny(id -> !id.getName().startsWith("message")))
 				.commonTags(metricsProperties.getDimensionName(), metricsProperties.getDimensionValue());
 		return cloudWatchMeterRegistry;
