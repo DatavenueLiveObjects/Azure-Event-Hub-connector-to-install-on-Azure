@@ -113,7 +113,7 @@ public class MeterRegistryConfig {
                 getMeters().stream()
                         .filter(m -> m.getId().getName().startsWith("message") )
                         .map(m -> get(m.getId().getName()).counter())
-                        .forEach(c -> LOG.info(c.getId().getName() + " = " + val(c)));
+                        .forEach(c -> LOG.info("{} = {}", c.getId().getName(),  val(c)));
             }
 
             @Override
