@@ -27,8 +27,8 @@
             <maxHistory>7</maxHistory>
         </rollingPolicy>
     </appender>
-    <logger name="com.orange.lo.sample.mqtt2eventhub" level="INFO" />
-    <Logger name="org.eclipse.paho.client.mqttv3"  level="INFO" />
+    <logger name="com.orange.lo.sample.mqtt2eventhub" level="DEBUG" />
+    <Logger name="org.eclipse.paho.client.mqttv3"  level="FINE" />
     <Logger name="org.apache.catalina.core" level="WARN" />
     <Logger name="org.springframework.boot.web.embedded.tomcat" level="WARN" />
 
