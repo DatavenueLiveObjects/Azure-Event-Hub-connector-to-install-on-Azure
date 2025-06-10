@@ -15,6 +15,7 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +29,7 @@ import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 
 @Component
+@EnableScheduling
 public class EventHubSender {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -60,20 +62,20 @@ public class EventHubSender {
                         .withBackoff(eventHubProperties.getThrottlingDelay().toMillis(), Duration.ofMinutes(1).toMillis(), ChronoUnit.MILLIS)
                         .onRetry(r -> {
                             LOG.debug("Problem while sending message to Event Hub because of: {}. Retrying...", r.getLastFailure().getMessage());
-                            counters.getMesasageSentAttemptFailedCounter().increment();
+                            counters.getMesasageSentAttemptFailedCounter().increment(messages.size());
                         })
                         .onSuccess(r -> {
-                            LOG.debug("Message was sent to Event Hub");
-                            counters.getMesasageSentCounter().increment();
+                            LOG.debug("Batch of messages of the following size were sent: {}", messages.size());
+                            counters.getMesasageSentCounter().increment(messages.size());
                             messages.forEach(m -> loService.sendAck(m.messageId()));
                         })
                         .onFailure(r -> {
                             LOG.error("Cannot send messages to Event Hub because of {}", r.getFailure());
-                            counters.getMesasageSentFailedCounter().increment();
+                            counters.getMesasageSentFailedCounter().increment(messages.size());
                             messages.forEach(m -> loService.sendAck(m.messageId()));
                         })
         ).with(executorService).run(execution -> {
-            counters.getMesasageSentAttemptCounter().increment();
+            counters.getMesasageSentAttemptCounter().increment(messages.size());
             try {
                 List<String> messageContentList = messages.stream().map(LoMessage::message).toList();
                 eventHubClientFacade.sendSync(messageContentList);
@@ -98,6 +100,7 @@ public class EventHubSender {
 
     @Scheduled(fixedRateString = "${azure.evt-hub.synchronization-interval}")
     public void send() {
+        LOG.debug("Number of messages waiting to be sent: {}", messageQueue.size());
         if (!messageQueue.isEmpty()) {
             LOG.info("Start sending messages...");
 
