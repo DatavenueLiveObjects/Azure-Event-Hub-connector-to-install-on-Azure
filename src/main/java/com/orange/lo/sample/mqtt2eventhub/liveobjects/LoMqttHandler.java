@@ -7,43 +7,35 @@
 
 package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
-import com.orange.lo.sample.mqtt2eventhub.evthub.EventHubSender;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
-import com.orange.lo.sdk.LOApiClient;
 import com.orange.lo.sdk.fifomqtt.DataManagementFifoCallback;
+import io.micrometer.core.instrument.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Queue;
 
 @Component
 public class LoMqttHandler implements DataManagementFifoCallback {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final EventHubSender eventHubSender;
-    private final Counters counters;
-    private final LOApiClient loApiClient;
-    private final LoProperties loProperties;
+    private final Counter mesasageReadCounter;
+    private final Queue<LoMessage> messageQueue;
 
-    public LoMqttHandler(@Lazy EventHubSender eventHubSender, @Lazy LOApiClient loApiClient, Counters counters, LoProperties loProperties) {
-        this.eventHubSender = eventHubSender;
-        this.counters = counters;
-        this.loApiClient = loApiClient;
-        this.loProperties = loProperties;
+    public LoMqttHandler(Counters counterProvider, Queue<LoMessage> messageQueue) {
+        LOG.info("LoMqttHandler init...");
+
+        this.mesasageReadCounter = counterProvider.getMesasageReadCounter();
+        this.messageQueue = messageQueue;
     }
 
     @Override
-    public void onMessage(int loMessageId, String message) {
-        counters.getMesasageReadCounter().increment();
-        try {
-            eventHubSender.send(loMessageId, message);
-        } catch (Exception e) {
-            LOG.error("Cannot send message with id = {} to Event Hub because of {}", loMessageId, e);
-            counters.getMesasageSentFailedCounter().increment();
-            loApiClient.getDataManagementFifo().sendAck(loMessageId, loProperties.getMessageQos());
-        }
+    public void onMessage(int messageId, String message) {
+        LOG.debug("Received message with id = {}", messageId);
+        mesasageReadCounter.increment();
+        messageQueue.add(new LoMessage(messageId, message));
     }
 }

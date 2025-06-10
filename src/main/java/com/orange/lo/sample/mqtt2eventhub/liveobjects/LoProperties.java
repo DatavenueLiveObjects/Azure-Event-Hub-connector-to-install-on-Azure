@@ -15,7 +15,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 public class LoProperties {
 
 	private static final String CONNECTOR_TYPE = "LO_AZURE_EVENTHUB_ADAPTER";
-	
+
     private final String hostname;
     private final String apiKey;
     private final String topic;
@@ -47,7 +47,7 @@ public class LoProperties {
     public String getConnectorType() {
         return CONNECTOR_TYPE;
     }
-    
+
     public String getHostname() {
         return hostname;
     }

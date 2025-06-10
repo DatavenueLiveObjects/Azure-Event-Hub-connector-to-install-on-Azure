@@ -19,37 +19,45 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class LoMqttHandlerTest {
 
     @Mock
-    private EventHubSender eventHubSender;
-    @Mock
-    private LOApiClient loApiClient;
-    @Mock
-    private LoProperties loProperties;
-    @Mock
     private Counters counters;
     @Mock
-    private Counter counter;
-    private LoMqttHandler loMqttHandler;
+    private Counter receivedCounter;
+    private Queue<LoMessage> messageQueue;
+    private LoMqttHandler handler;
 
     @BeforeEach
     void setUp() {
-        when(counters.getMesasageReadCounter()).thenReturn(counter);
-        loMqttHandler = new LoMqttHandler(eventHubSender, loApiClient, counters, loProperties);
+        when(counters.getMesasageReadCounter()).thenReturn(receivedCounter);
+        messageQueue = new LinkedList<>();
+        handler = new LoMqttHandler(counters, messageQueue);
     }
 
     @Test
-    void shouldCallEvtHubSenderAndCounterWhenMessageIsHandled() {
-        String message = "{}";
-        int loMessageId = 1;
+    public void shouldIncrementCounterOnMessage() {
+        // when
+        handler.onMessage(1, "test message");
 
-        loMqttHandler.onMessage(loMessageId, message);
+        // then
+        verify(receivedCounter, times(1)).increment();
+    }
 
-        verify(counter, times(1)).increment();
-        verify(eventHubSender, times(1)).send(loMessageId, message);
+    @Test
+    public void shouldAddMessageToQueueOnMessage() {
+        // when
+        handler.onMessage(1, "test message");
+
+        // then
+        assertEquals(1, messageQueue.size());
+        assertEquals(new LoMessage(1, "test message"), messageQueue.peek());
     }
 }

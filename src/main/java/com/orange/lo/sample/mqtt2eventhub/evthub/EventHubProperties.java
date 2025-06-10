@@ -27,6 +27,7 @@ public class EventHubProperties {
     @DurationUnit(ChronoUnit.MILLIS)
     private Duration throttlingDelay = Duration.ofMillis(1);
     private int maxSendAttempts = 3;
+    private Integer messageBatchSize;
 
     public String getNameSpace() {
         return nameSpace;
@@ -98,5 +99,13 @@ public class EventHubProperties {
 
     public void setMaxSendAttempts(int maxSendAttempts) {
         this.maxSendAttempts = maxSendAttempts;
+    }
+
+    public Integer getMessageBatchSize() {
+        return messageBatchSize;
+    }
+
+    public void setMessageBatchSize(Integer messageBatchSize) {
+        this.messageBatchSize = messageBatchSize;
     }
 }

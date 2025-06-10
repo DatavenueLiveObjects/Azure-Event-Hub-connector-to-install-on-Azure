@@ -10,15 +10,17 @@ lo:
 
 azure:
   evt-hub:
-    name-space:
-    evt-hub-name:
+    name-space: eventhub-name-space
+    evt-hub-name: eventhub-name
     sas-key-name: RootManageSharedAccessKey
-    sas-key:
+    sas-key: EX4MPLE5ASK3Y
     thread-pool-size: 40
     task-queue-size: 150000
     connection-timeout: 5000
     throttling-delay: 5000
     max-send-attempts: 3
+    synchronization-interval: 10000
+    message-batch-size: 10
 
 metrics:
   namespace: CCS

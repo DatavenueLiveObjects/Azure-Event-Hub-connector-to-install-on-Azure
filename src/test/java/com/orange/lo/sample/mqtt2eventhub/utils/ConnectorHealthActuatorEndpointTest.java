@@ -1,13 +1,12 @@
 package com.orange.lo.sample.mqtt2eventhub.utils;
 
-import com.orange.lo.sdk.LOApiClient;
-import com.orange.lo.sdk.fifomqtt.DataManagementFifo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
+import org.springframework.boot.actuate.health.Health;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,10 +18,7 @@ class ConnectorHealthActuatorEndpointTest {
 
     @BeforeEach
     void setUp() {
-        DataManagementFifo dataManagementFifo = Mockito.mock(DataManagementFifo.class);
-        LOApiClient loApiClient = Mockito.mock(LOApiClient.class);
-        Mockito.when(loApiClient.getDataManagementFifo()).thenReturn(dataManagementFifo);
-        this.connectorHealthActuatorEndpoint = new ConnectorHealthActuatorEndpoint(loApiClient);
+        this.connectorHealthActuatorEndpoint = new ConnectorHealthActuatorEndpoint();
     }
 
     @ParameterizedTest
@@ -34,7 +30,33 @@ class ConnectorHealthActuatorEndpointTest {
                 .get("cloudConnectionStatus");
 
         // then
-        assertEquals(cloudConnectionStatus, isConnected);
+        assertEquals(isConnected, cloudConnectionStatus);
+        assertEquals(isConnected, connectorHealthActuatorEndpoint.isCloudConnectionStatus());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideTestData")
+    void checkLoConnectionStatus(boolean isConnected) {
+        // when
+        connectorHealthActuatorEndpoint.setLoConnectionStatus(isConnected);
+        boolean loMqttConnectionStatus = (boolean) connectorHealthActuatorEndpoint.health().getDetails()
+                .get("loMqttConnectionStatus");
+
+        // then
+        assertEquals(isConnected, loMqttConnectionStatus);
+        assertEquals(isConnected, connectorHealthActuatorEndpoint.isLoConnectionStatus());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideTestData")
+    void checkHealth(boolean includeDetails) {
+        // when
+        Health health = connectorHealthActuatorEndpoint.getHealth(includeDetails);
+        Map<String, Object> details = health.getDetails();
+        int expectedDetailsSize = includeDetails ? 2 : 0;
+
+        // then
+        assertEquals(expectedDetailsSize, details.size());
     }
 
     private static Stream<Arguments> provideTestData() {
