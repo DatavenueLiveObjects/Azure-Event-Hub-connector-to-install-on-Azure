@@ -9,7 +9,6 @@ package com.orange.lo.sample.mqtt2eventhub.evthub;
 
 import com.orange.lo.sample.mqtt2eventhub.liveobjects.LoMessage;
 import com.orange.lo.sample.mqtt2eventhub.liveobjects.LoService;
-import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
 import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -39,18 +38,15 @@ public class EventHubSender {
     private final Counters counters;
     private final EventHubProperties eventHubProperties;
     private final ExecutorService executorService;
-    private final ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
     private final LoService loService;
     private final Queue<LoMessage> messageQueue;
 
     EventHubSender(EventHubClientFacade eventHubClientFacade, Counters counters, EventHubProperties eventHubProperties,
-                   ExecutorService executorService, ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint,
-                   LoService loService, Queue<LoMessage> messageQueue) {
+                   ExecutorService executorService, LoService loService, Queue<LoMessage> messageQueue) {
         this.eventHubClientFacade = eventHubClientFacade;
         this.counters = counters;
         this.eventHubProperties = eventHubProperties;
         this.executorService = executorService;
-        this.connectorHealthActuatorEndpoint = connectorHealthActuatorEndpoint;
         this.loService = loService;
         this.messageQueue = messageQueue;
     }
@@ -79,10 +75,10 @@ public class EventHubSender {
             try {
                 List<String> messageContentList = messages.stream().map(LoMessage::message).toList();
                 eventHubClientFacade.sendSync(messageContentList);
-                connectorHealthActuatorEndpoint.setCloudConnectionStatus(true);
+                counters.setCloudConnectionStatus(true);
             } catch (EventHubClientFacadeException e) {
                 LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
-                connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
+                counters.setCloudConnectionStatus(false);
                 throw e;
             }
         });
@@ -94,7 +90,7 @@ public class EventHubSender {
             eventHubClientFacade.sendSync(new byte[0]);
         } catch (EventHubClientFacadeException e) {
             LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
-            connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
+            counters.setCloudConnectionStatus(false);
         }
     }
 

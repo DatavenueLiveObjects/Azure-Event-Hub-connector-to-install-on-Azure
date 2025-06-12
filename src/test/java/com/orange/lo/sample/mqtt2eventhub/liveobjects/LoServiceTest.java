@@ -7,7 +7,7 @@
 
 package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
-import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
+import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import com.orange.lo.sdk.LOApiClient;
 import com.orange.lo.sdk.fifomqtt.DataManagementFifo;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +28,7 @@ class LoServiceTest {
     @Mock
     private LoProperties loProperties;
     @Mock
-    private ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
+    private Counters counters;
 
     @BeforeEach
     void setUp() {
@@ -37,10 +37,10 @@ class LoServiceTest {
 
     @Test
     void startShouldConnectAndSubscribe() {
-        when(connectorHealthActuatorEndpoint.isLoConnectionStatus()).thenReturn(true);
-        when(connectorHealthActuatorEndpoint.isCloudConnectionStatus()).thenReturn(true);
+        when(counters.isLoConnectionStatusUp()).thenReturn(true);
+        when(counters.isCloudConnectionStatusUp()).thenReturn(true);
 
-        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint, loProperties);
+        LoService loService = new LoService(loApiClient, counters, loProperties);
         loService.start();
 
         verify(dataManagementFifo, times(1)).connectAndSubscribe();
@@ -48,14 +48,14 @@ class LoServiceTest {
 
     @Test
     void shouldInvokeDisconnect() {
-        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint, loProperties);
+        LoService loService = new LoService(loApiClient, counters, loProperties);
         loService.stop();
 
         verify(dataManagementFifo, times(1)).disconnect();
     }
     @Test
     void shouldSendAck() {
-        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint, loProperties);
+        LoService loService = new LoService(loApiClient, counters, loProperties);
         int messageId = 12345;
         loService.sendAck(messageId);
 
