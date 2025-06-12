@@ -11,9 +11,6 @@ public class ConnectorHealthActuatorEndpoint implements HealthIndicator {
     boolean cloudConnectionStatus = true;
     boolean loConnectionStatus = true;
 
-    public ConnectorHealthActuatorEndpoint() {
-    }
-
     @Override
     public Health getHealth(boolean includeDetails) {
         return HealthIndicator.super.getHealth(includeDetails);
