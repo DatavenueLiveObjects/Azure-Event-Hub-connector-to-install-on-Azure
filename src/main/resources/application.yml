@@ -19,6 +19,8 @@ azure:
     connection-timeout: 5000
     throttling-delay: 5ms
     max-send-attempts: 3
+    synchronization-interval: 10000
+    message-batch-size: 10
 
 metrics:
   send-to-cloudwatch: false

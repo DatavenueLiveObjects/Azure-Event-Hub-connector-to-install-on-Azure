@@ -26,6 +26,8 @@ class LoServiceTest {
     @Mock
     private LOApiClient loApiClient;
     @Mock
+    private LoProperties loProperties;
+    @Mock
     private ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
 
     @BeforeEach
@@ -38,7 +40,7 @@ class LoServiceTest {
         when(connectorHealthActuatorEndpoint.isLoConnectionStatus()).thenReturn(true);
         when(connectorHealthActuatorEndpoint.isCloudConnectionStatus()).thenReturn(true);
 
-        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint);
+        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint, loProperties);
         loService.start();
 
         verify(dataManagementFifo, times(1)).connectAndSubscribe();
@@ -46,9 +48,17 @@ class LoServiceTest {
 
     @Test
     void shouldInvokeDisconnect() {
-        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint);
+        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint, loProperties);
         loService.stop();
 
         verify(dataManagementFifo, times(1)).disconnect();
+    }
+    @Test
+    void shouldSendAck() {
+        LoService loService = new LoService(loApiClient, connectorHealthActuatorEndpoint, loProperties);
+        int messageId = 12345;
+        loService.sendAck(messageId);
+
+        verify(dataManagementFifo, times(1)).sendAck(messageId, 0);
     }
 }

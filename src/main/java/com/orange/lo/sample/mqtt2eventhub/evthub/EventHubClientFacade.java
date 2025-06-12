@@ -22,6 +22,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -59,16 +60,28 @@ public class EventHubClientFacade {
         }
     }
 
+    public void sendSync(List<String> messages) throws EventHubClientFacadeException {
+        List<EventData> list = messages.stream().map(msg -> {
+            byte[] bytes = msg.getBytes(Charset.defaultCharset());
+            return EventData.create(bytes);
+        }).toList();
+        sendSync(list);
+    }
+
     public void sendSync(String msg) throws EventHubClientFacadeException {
         byte[] payloadBytes = msg.getBytes(Charset.defaultCharset());
         sendSync(payloadBytes);
     }
 
-    public void sendSync(byte[] msg) throws EventHubClientFacadeException {
-        EventData sendEvent = EventData.create(msg);
+    public void sendSync(byte[] payloadBytes) throws EventHubClientFacadeException {
+        EventData sendEvent = EventData.create(payloadBytes);
+        List<EventData> list = List.of(sendEvent);
+        sendSync(list);
+    }
 
+    public void sendSync(Iterable<EventData> eventDatas) throws EventHubClientFacadeException {
         try {
-            eventHubClient.sendSync(sendEvent);
+            eventHubClient.sendSync(eventDatas);
         } catch (NullPointerException e) {
             throw new EventHubClientFacadeException(EVENT_HUB_CLIENT_NOT_INITIALIZED_MESSAGE);
         } catch (EventHubException e) {

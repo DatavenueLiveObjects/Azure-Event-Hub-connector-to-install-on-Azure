@@ -9,6 +9,8 @@ package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
 import com.orange.lo.sdk.LOApiClient;
 import com.orange.lo.sdk.LOApiClientParameters;
+import com.orange.lo.sdk.fifomqtt.DataManagementFifoCallback;
+import com.orange.lo.sdk.mqtt.DataManagementReconnectCallback;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -25,12 +27,14 @@ import java.util.Collections;
 public class LoConfig {
 
 	private final LoProperties loProperties;
-	private final LoMqttHandler loMqttHandler;
+	private final DataManagementFifoCallback loMqttHandler;
+    private final DataManagementReconnectCallback reconnectHandler;
 
-	public LoConfig(LoProperties loProperties, LoMqttHandler loMqttHandler) {
+    public LoConfig(LoProperties loProperties, DataManagementFifoCallback loMqttHandler, DataManagementReconnectCallback reconnectHandler) {
 		this.loProperties = loProperties;
 		this.loMqttHandler = loMqttHandler;
-	}
+        this.reconnectHandler = reconnectHandler;
+    }
 
 	@Bean
 	public LOApiClient loApiClient() {
@@ -51,6 +55,7 @@ public class LoConfig {
                 .dataManagementMqttCallback(loMqttHandler)
                 .connectorType(loProperties.getConnectorType())
                 .connectorVersion(getConnectorVersion())
+				.dataManagementReconnectCallback(reconnectHandler)
                 .build();
     }
 

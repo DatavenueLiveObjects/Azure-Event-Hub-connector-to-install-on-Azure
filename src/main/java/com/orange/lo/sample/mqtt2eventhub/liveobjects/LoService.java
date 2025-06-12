@@ -25,11 +25,14 @@ public class LoService {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final DataManagementFifo dataManagementFifo;
+    private final LoProperties loProperties;
 
     private final ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
 
-    public LoService(LOApiClient loApiClient, ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint) {
+    public LoService(LOApiClient loApiClient, ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint,
+                     LoProperties loProperties) {
         this.dataManagementFifo = loApiClient.getDataManagementFifo();
+        this.loProperties = loProperties;
         this.connectorHealthActuatorEndpoint = connectorHealthActuatorEndpoint;
     }
 
@@ -50,4 +53,9 @@ public class LoService {
     public void stop() {
         dataManagementFifo.disconnect();
     }
+
+    public void sendAck(int loMessageId) {
+        dataManagementFifo.sendAck(loMessageId, loProperties.getMessageQos());
+    }
+
 }
