@@ -11,7 +11,7 @@ import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
 import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.EventHubException;
-import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
+import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -32,13 +32,13 @@ public class EventHubClientFacade {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     public static final String EVENT_HUB_CLIENT_NOT_INITIALIZED_MESSAGE = "The event hub client has not been initialized. Check the validity of your credentials";
 
-    private final ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
+    private final Counters counters;
     private final EventHubProperties eventHubProperties;
     private EventHubClient eventHubClient;
 
-    public EventHubClientFacade(EventHubProperties eventHubProperties, ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint) {
+    public EventHubClientFacade(EventHubProperties eventHubProperties, Counters counters) {
         this.eventHubProperties = eventHubProperties;
-        this.connectorHealthActuatorEndpoint = connectorHealthActuatorEndpoint;
+        this.counters = counters;
     }
 
     @PostConstruct
@@ -56,7 +56,7 @@ public class EventHubClientFacade {
             this.eventHubClient = EventHubClient.createFromConnectionStringSync(conn.toString(), executor);
         } catch (Exception e) {
             LOG.error("Problem with connection. Check Event Hub credentials. " + e.getMessage(), e);
-            connectorHealthActuatorEndpoint.setCloudConnectionStatus(false);
+            counters.setCloudConnectionStatus(false);
         }
     }
 

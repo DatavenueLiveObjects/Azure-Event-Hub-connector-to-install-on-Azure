@@ -7,7 +7,7 @@
 
 package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
-import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
+import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import com.orange.lo.sdk.LOApiClient;
 import com.orange.lo.sdk.fifomqtt.DataManagementFifo;
 import com.orange.lo.sdk.mqtt.exceptions.LoMqttException;
@@ -27,13 +27,13 @@ public class LoService {
     private final DataManagementFifo dataManagementFifo;
     private final LoProperties loProperties;
 
-    private final ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
+    private final Counters counters;
 
-    public LoService(LOApiClient loApiClient, ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint,
+    public LoService(LOApiClient loApiClient, Counters counters,
                      LoProperties loProperties) {
         this.dataManagementFifo = loApiClient.getDataManagementFifo();
         this.loProperties = loProperties;
-        this.connectorHealthActuatorEndpoint = connectorHealthActuatorEndpoint;
+        this.counters = counters;
     }
 
     @PostConstruct
@@ -42,10 +42,10 @@ public class LoService {
             dataManagementFifo.connect();
         } catch (LoMqttException e) {
             LOG.error("Problem with connection. Check LO credentials. ", e);
-            connectorHealthActuatorEndpoint.setLoConnectionStatus(false);
+            counters.setLoConnectionStatus(false);
         }
 
-        if (connectorHealthActuatorEndpoint.isCloudConnectionStatus() && connectorHealthActuatorEndpoint.isLoConnectionStatus())
+        if (counters.isCloudConnectionStatusUp() && counters.isLoConnectionStatusUp())
             dataManagementFifo.connectAndSubscribe();
     }
 

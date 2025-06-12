@@ -7,26 +7,26 @@
 
 package com.orange.lo.sample.mqtt2eventhub.liveobjects;
 
-import com.orange.lo.sample.mqtt2eventhub.utils.ConnectorHealthActuatorEndpoint;
+import com.orange.lo.sample.mqtt2eventhub.utils.Counters;
 import com.orange.lo.sdk.mqtt.DataManagementReconnectCallback;
 import org.springframework.stereotype.Component;
 
 @Component
 public class LoMqttReconnectHandler implements DataManagementReconnectCallback {
 
-    private final ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint;
+    private final Counters counters;
 
-    public LoMqttReconnectHandler(ConnectorHealthActuatorEndpoint connectorHealthActuatorEndpoint) {
-        this.connectorHealthActuatorEndpoint = connectorHealthActuatorEndpoint;
+    public LoMqttReconnectHandler(Counters counters) {
+        this.counters = counters;
     }
 
     @Override
     public void connectComplete(boolean b, String s) {
-        connectorHealthActuatorEndpoint.setLoConnectionStatus(true);
+        counters.setLoConnectionStatus(true);
     }
 
     @Override
     public void connectionLost(Throwable throwable) {
-        connectorHealthActuatorEndpoint.setLoConnectionStatus(false);
+        counters.setLoConnectionStatus(false);
     }
 }
